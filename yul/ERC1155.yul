@@ -1,7 +1,6 @@
 object "ERC1155" {
   code {
-    let a := calldataload(1)
-    sstore(0, a)
+    sstore(0, "ABC")
     
     datacopy(0, dataoffset("Runtime"), datasize("Runtime"))
     return(0, datasize("Runtime"))
@@ -37,9 +36,8 @@ object "ERC1155" {
           safeTransferFrom(decodeAsAddress(0), decodeAsAddress(1), decodeAsUint(2), decodeAsUint(3), 0x00)
         }
         case 0x2eb2c2d6 { // safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)
-
+          safeBatchTransferFrom(decodeAsAddress(0), decodeAsAddress(1))
         }
-
         default {
           revert(0,0)
         }
@@ -130,14 +128,82 @@ object "ERC1155" {
             let fromBalance := sload(fromLoc)
             let toBalance := sload(toLoc)
 
-
             require(gte(fromBalance, amount))
 
             sstore(fromLoc, sub(fromBalance, amount))
             sstore(toLoc, add(toBalance, amount)) 
             
-            return (0x80, 0x140)
+            // return (0x80, 0x140)
 
+          }
+
+          function safeBatchTransferFrom(from, to) {
+            
+            if iszero(from) { revert(0x00, 0x00) }
+            
+            let idsOffset := decodeAsUint(2)
+            let amountsOffset := decodeAsUint(3)
+
+
+            let lenAmountsOffset := add(4, amountsOffset)
+            let lenIdsOffset := add(4, idsOffset)
+
+            let lenAmounts := calldataload(lenAmountsOffset)
+            let lenIds := calldataload(lenIdsOffset)
+
+            // mstore(0x00, lenIds)
+            // return (0x00, 0x20)
+            if iszero(eq(lenAmounts, lenIds)) { revert (0x00, 0x00) }
+
+            let currentOffset := 0x00
+            currentOffset := add(currentOffset, 0x20)
+
+
+
+            for { let i := 0 } lt(i, lenIds) { i := add(i, 1) } {
+
+            let id := calldataload(add(lenIdsOffset, currentOffset))
+            let amount := calldataload(add(lenAmountsOffset, sub(currentOffset, 0x00)))
+            
+            mstore(0x00, balanceOfStorageOffset(from))
+            mstore(0x20, id)
+            let fromLoc := keccak256(0x00, 0x40)
+            
+            
+            mstore(0x00, balanceOfStorageOffset(to))
+            let toLoc := keccak256(0x00, 0x40)
+
+            let fromBalance := sload(fromLoc)
+            let toBalance := sload(toLoc)
+
+
+            require(gte(fromBalance, amount))
+
+            sstore(fromLoc, sub(fromBalance, amount))
+            sstore(toLoc, add(toBalance, amount)) 
+
+
+
+            
+              // mstore(currentOffset, amount)
+              // safeTransferFrom(from, to, id, amount, 0x00)
+              currentOffset := add(currentOffset, 0x20)
+            }
+            return(0x00, currentOffset)
+            // return (0x100, 0x120)
+
+            // length should be equal
+
+            // to != address(0)
+
+            // fromBalance
+
+            // fromBalance - amount
+
+            // toBalance + amount
+
+            // safeacceptant
+            // revert(0x00, 0x40)
           }
 
           function mint(account, id, amount) {
@@ -195,7 +261,6 @@ object "ERC1155" {
               mstore(0x40, msg)
               revert(0x00, 0x60)
           }
-
     }
   }
 
