@@ -46,6 +46,10 @@ contract ERC1155 {
     function mint(address account, uint id, uint amount) public {
         _mint(account, id, amount,"");
     }
+
+    function burn(uint id, uint amount) public {
+        _burn(msg.sender, id, amount);
+    }
     function balanceOf(address account, uint256 id) public view returns (uint) {
         require(
             account != address(0),
