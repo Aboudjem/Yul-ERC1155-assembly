@@ -1,3 +1,8 @@
+/// @title ERC-1155 Token Contract in YUL (Assembly)
+/// @author Adam Boudjemaa (@aboudjem)
+///
+///  An ERC-1155 token contract implemented in YUL (Assembly) language
+
 // ╔══════════════════════════════════════════╗
 // ║                 ERC1155                  ║
 // ╚══════════════════════════════════════════╝
