@@ -68,7 +68,7 @@ object "ERC1155" {
           }
 
           case 0xb390c0ab {
-            burn(caller(), decodeAsAddress(0), decodeAsUint(1))
+            burn(caller(), decodeAsUint(0), decodeAsUint(1))
           }
           
           // Revert for unknown function calls
@@ -309,7 +309,7 @@ object "ERC1155" {
           if iszero(gte(bal, amount)) {
             revertWithBurnAmountExceedsBalance()
           }
-          sstore(loc, safeSub(bal, amount))
+          sstore(loc, sub(bal, amount))
 
           emitTransferSingle(caller(), account, 0, id, amount)
       }
@@ -330,6 +330,7 @@ object "ERC1155" {
           // onERC1155Received(address,address,uint256,uint256,bytes)
           let selector := 0xf23a6e6100000000000000000000000000000000000000000000000000000000
           let errorSig := 0x8c379a000000000000000000000000000000000000000000000000000000000
+          
           // calldata for onERC1155Received(operator, from, id, amount, data)
           mstore(0x100, selector)
           mstore(0x104, caller())
@@ -338,7 +339,6 @@ object "ERC1155" {
           mstore(0x164, amount)
           mstore(0x184, 0x1a0)
           
-          // mstore(0x00, 0x00)
           let endPtr := copyDataToMem(0x1a4, data)
           mstore(0x00,0x00)
           let res := call(gas(), to, 0, 0x100, endPtr, 0x00, 0x04) 
@@ -433,22 +433,26 @@ object "ERC1155" {
       function emitTransferBatch(operator, from, to, ids, amounts) {
         let signatureHash := 0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb
 
-        let oldMptr := 0x00
-        let mptr := oldMptr
+        // Calculate lengths of token IDs and amounts arrays
+        let lenIdsOffset := add(4, ids)
 
-        let idsOffsetPtr := mptr
-        let valuesOffsetPtr := add(mptr, 0x20)
+        let lenIds := calldataload(lenIdsOffset)
 
-        mstore(idsOffsetPtr, 0x40) // ids offset
+        let memptr := 0x00
+        
+        mstore(memptr, 0x0000000000000000000000000000000000000000000000000000000000000040)
+        memptr := add(memptr, 0x20)
+        mstore(memptr, add(0x60, mul(lenIds, 0x20)))
+        memptr := add(memptr, 0x20)
 
-        let valuesPtr := copyDataToMem(add(mptr, 0x40), ids) // copy ids arary to memory
+        let len := add(sub(calldatasize(), lenIdsOffset), 0x20)
 
-        mstore(valuesOffsetPtr, sub(valuesPtr, oldMptr)) // store values Offset
-        let endPtr := copyDataToMem(valuesPtr, amounts) // copy values array to memory
+        for { let i := 0 } lt(memptr, len) { i := add(i, 1) } {
+          mstore(memptr, calldataload(add(sub(memptr, 0x40), lenIdsOffset)))
+          memptr := add(memptr, 0x20)
+        }
 
-        log4(oldMptr, sub(endPtr, oldMptr), signatureHash, operator, from, to)
-
-        mstore(0x40, endPtr) // update Free Memory Pointer
+        log4(0, memptr, signatureHash, caller(), from, to)
     }
 
 
@@ -466,6 +470,9 @@ object "ERC1155" {
         log2(0x00, 0x20, signatureHash, id)
       }
 
+      // ╔══════════════════════════════════════════╗
+      // ║            Reverts Functions             ║
+      // ╚══════════════════════════════════════════╝
 
       // Function to revert with a custom message and size
       function revertWithInvalidOwner() {
@@ -555,7 +562,7 @@ object "ERC1155" {
         revert(0x00, 0x84)
       }
       
-      // "ERC1155: burn from the zero address"
+      // Error("ERC1155: burn from the zero address")
       function revertWithBurnFromZeroAddress() {
         mstore(0x00, 0x8c379a000000000000000000000000000000000000000000000000000000000)
         mstore(0x04, 0x0000000000000000000000000000000000000000000000000000000000000020)
