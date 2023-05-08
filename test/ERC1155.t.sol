@@ -322,8 +322,9 @@ contract ERC1155Test is Test {
     }
 
     function testBurnWithZeroAddress() public {
-        uint id = 1010;
         vm.stopPrank();
+
+        uint id = 1010;
         address zero = address(0);
 
         vm.prank(zero, msg.sender);
@@ -337,25 +338,26 @@ contract ERC1155Test is Test {
     }
 
 
-    function testSafeBatchTransferFrom(address sender, address receiver) public {
-        
-        vm.assume(receiver != address(0));
-        vm.assume(sender != address(0));
+    function testSafeBatchTransferFrom() public {
         vm.stopPrank();
-        vm.startPrank(sender, msg.sender);
+
+        vm.startPrank(owner, msg.sender);
+
+        address sender = owner;
+
         uint[] memory ids = new uint[](5);
-        ids[0] = 32;
-        ids[1] = 64;
-        ids[2] = 128;
-        ids[3] = 256;
-        ids[4] = 512;
+        ids[0] = 0xa1;
+        ids[1] = 0xb2;
+        ids[2] = 0xc3;
+        ids[3] = 0xd4;
+        ids[4] = 0xe5;
 
         uint[] memory amounts = new uint[](5);
-        amounts[0] = 100;
-        amounts[1] = 200;
-        amounts[2] = 300;
-        amounts[3] = 400;
-        amounts[4] = 500;
+        amounts[0] = 0xaa;
+        amounts[1] = 0xbb;
+        amounts[2] = 0xcc;
+        amounts[3] = 0xdd;
+        amounts[4] = 0xee;
 
         
         yulContract.mint(sender,  ids[0], amounts[0]);
@@ -364,7 +366,6 @@ contract ERC1155Test is Test {
         yulContract.mint(sender,  ids[3], amounts[3]);
         yulContract.mint(sender,  ids[4], amounts[4]);
         
-
         solContract.mint(sender,  ids[0], amounts[0]);
         solContract.mint(sender,  ids[1], amounts[1]);
         solContract.mint(sender,  ids[2], amounts[2]);
@@ -372,13 +373,40 @@ contract ERC1155Test is Test {
         solContract.mint(sender,  ids[4], amounts[4]);
         
 
+        vm.expectEmit(true, true, true, true);
+        emit TransferBatch(sender, sender, userA, ids, amounts);
+        yulContract.safeBatchTransferFrom(sender, userA, ids, amounts, "");
 
         vm.expectEmit(true, true, true, true);
-        emit TransferBatch(msg.sender, sender, receiver, ids, amounts);
-        solContract.safeBatchTransferFrom(sender, receiver, ids, amounts, "");
+        emit TransferBatch(sender, sender, userA, ids, amounts);
+        solContract.safeBatchTransferFrom(sender, userA, ids, amounts, "");
+    }
+
+    function testSimpleMint(uint8 id, uint128 amount) public {
+        vm.assume(amount > 0);
+        address to = userA;
+        vm.expectEmit(true, true, true, true);
+        emit TransferSingle(owner, address(0), to, id, amount);
+        yulContract.mint(to, id, amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit TransferSingle(owner, address(0), to, id, amount);
+        solContract.mint(to, id, amount);
+    }
+
+    function testSimpleBurn(uint id, uint248 amount) public {
+        yulContract.mint(owner, id, amount);
+        solContract.mint(owner, id, amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit TransferSingle(owner, owner, address(0), id, amount);
+        yulContract.burn(id, amount);
+
+        vm.expectEmit(true, true, true, true);
+        emit TransferSingle(owner, owner, address(0), id, amount);
+        solContract.burn(id, amount);
 
         vm.stopPrank();
-        // assertEq(yulContract.balanceOfBatch(addresses, ids), solContract.balanceOfBatch(addresses, ids));
     }
 
 
