@@ -406,7 +406,6 @@ object "ERC1155" {
         return(0x00, 0x60)
       }
 
-
       /// @dev Function to do a safe transfer acceptance check
       /// @param from The address of the sender
       /// @param to The address of the recipient
@@ -540,6 +539,10 @@ object "ERC1155" {
         /// Update the memory pointer to the next available location
         updatedMemPtr := add(memPtr, totalLength)
       }
+
+      // ╔══════════════════════════════════════════╗
+      // ║            Events Functions              ║
+      // ╚══════════════════════════════════════════╝
 
       /// @dev Function to emit a TransferSingle event
       /// @param operator The address of the operator performing the transfer
@@ -733,6 +736,7 @@ object "ERC1155" {
         mstore(0x24, 35)
         mstore(0x44, 0x455243313135353a206275726e2066726f6d20746865207a65726f2061646472)
         mstore(0x64, 0x6573730000000000000000000000000000000000000000000000000000000000)
+        
         revert(0x00, 0x84)
       }
 
