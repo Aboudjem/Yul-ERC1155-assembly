@@ -433,10 +433,11 @@ object "ERC1155" {
             mstore(0x124, from)
             mstore(0x144, id)
             mstore(0x164, amount)
-            mstore(0x184, 0x1a0)
+            mstore(0x184, 0x1a4)
+            mstore(0x1a4, getDataLength(data))
 
             /// Copy data to memory
-            let endPtr := copyDataToMem(0x1a4, data)
+            let endPtr := copyDataToMem(0x1c4, data)
 
             /// Clear the first 32 bytes in memory for storing the call result
             mstore(0x00, 0x00)
@@ -460,6 +461,13 @@ object "ERC1155" {
                 revertWithRejectedTokens()
             }
         }
+      }
+
+      function getDataLength(dataOff) -> dataLength {
+        /// Get the offset of the data length in calldata
+        let dataLengthOff := add(dataOff, 4)
+        /// Load the data length from calldata
+        dataLength := calldataload(dataLengthOff)
       }
 
       // ╔══════════════════════════════════════════╗
